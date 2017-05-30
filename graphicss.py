@@ -203,12 +203,16 @@ class GraphWin(tk.Canvas):
         self.items = []
         self.mouseX = None
         self.mouseY = None
+        self.mouseX2 = None
+        self.mouseY2 = None
         self.bind("<Button-1>", self._onClick)
+        self.bind("<2>", self._onClick2)
         self.bind_all("<Key>", self._onKey)
         self.height = height
         self.width = width
         self.autoflush = autoflush
         self._mouseCallback = None
+        self._mouseCallback2 = None
         self.trans = None
         self.closed = False
         master.lift()
@@ -289,6 +293,22 @@ class GraphWin(tk.Canvas):
         self.mouseY = None
         return Point(x, y)
 
+    def getMouseRight(self):
+        """Wait for mouse click and return Point object representing
+        the click"""
+        self.update()      # flush any prior clicks
+        self.mouseX2 = None
+        self.mouseY2 = None
+        while self.mouseX2 is None or self.mouseY2 is None:
+            self.update()
+            if self.isClosed():
+                raise GraphicsError("getMouse in closed window")
+            time.sleep(.1)  # give up thread
+        x, y = self.toWorld(self.mouseX2, self.mouseY2)
+        self.mouseX2 = None
+        self.mouseY2 = None
+        return Point(x, y)
+
     def checkMouse(self):
         """Return last mouse click or None if mouse has
         not been clicked since last call"""
@@ -299,6 +319,20 @@ class GraphWin(tk.Canvas):
             x, y = self.toWorld(self.mouseX, self.mouseY)
             self.mouseX = None
             self.mouseY = None
+            return Point(x, y)
+        else:
+            return None
+
+    def checkMouseRight(self):
+        """Return last mouse click or None if mouse has
+        not been clicked since last call"""
+        if self.isClosed():
+            raise GraphicsError("checkMouse in closed window")
+        self.update()
+        if self.mouseX2 is not None and self.mouseY2 is not None:
+            x, y = self.toWorld(self.mouseX2, self.mouseY2)
+            self.mouseX2 = None
+            self.mouseY2 = None
             return Point(x, y)
         else:
             return None
@@ -349,12 +383,21 @@ class GraphWin(tk.Canvas):
         
     def setMouseHandler(self, func):
         self._mouseCallback = func
+
+    def setMouseHandler2(self, func):
+        self._mouseCallback = func
         
     def _onClick(self, e):
         self.mouseX = e.x
         self.mouseY = e.y
         if self._mouseCallback:
             self._mouseCallback(Point(e.x, e.y))
+
+    def _onClick2(self, e):
+        self.mouseX2 = e.x
+        self.mouseY2 = e.y
+        if self._mouseCallback2:
+            self._mouseCallback2(Point(e.x, e.y))
 
     def addItem(self, item):
         self.items.append(item)
