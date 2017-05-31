@@ -335,6 +335,14 @@ class GraphWin(tk.Canvas):
             else:
                 return None
 
+    def checkMousePosition(self):
+        x = self.master.winfo_pointerx()-self.master.winfo_rootx()
+        y = self.master.winfo_pointery()-self.master.winfo_rooty()
+        if 0 <= x <= self.width and 0 <= y <= self.height:
+            return Point(x, y)
+        else:
+            return None
+
     def getKey(self):
         """Wait for user to press a key and return it as a string."""
         self.lastKey = ""
