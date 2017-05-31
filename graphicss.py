@@ -1,8 +1,8 @@
 import time
 import os
-import sys
 import matplotlib.path as mpl_path
 import numpy as np
+from math import sqrt, pow
 # graphics.py
 """
 Simple object oriented graphics library
@@ -118,7 +118,7 @@ __version__ = "5.0"
 #     Added Pixmap object for simple image manipulation.
 # Version 3.1 4/13/05
 #     Improved the Tk thread communication so that most Tk calls
-#        do not have to wait for synchonization with the Tk thread.
+#        do not have to wait for synchronization with the Tk thread.
 #        (see _tkCall and _tkExec)
 # Version 3.0 12/30/04
 #     Implemented Tk event loop in separate thread. Should now work
@@ -163,7 +163,7 @@ __version__ = "5.0"
 
 # Version 1.4
 #     Fixed Garbage collection of Tkinter images bug.
-#     Added ability to set text atttributes.
+#     Added ability to set text attributes.
 #     Added Entry boxes.
 
 try:  # import as appropriate for 2.x vs. 3.x
@@ -443,6 +443,13 @@ class GraphWin(tk.Canvas):
             item.undraw()
             item.draw(self)
         self.update()
+
+    def containsPoint(self, p):
+        if p is None:
+            return
+        x = p.getX()
+        y = p.getY()
+        return 0 <= x <= self.width and 0 <= y <= self.height
         
                       
 class Transform:
@@ -622,12 +629,52 @@ class Point(GraphicsObject):
     def getY(self):
         return self.y
 
+    def isInside(self, obj):
+        click_x = self.getX()
+        click_y = self.getY()
+        item_p1_x = 0
+        item_p1_y = 0
+        item_p2_x = 0
+        item_p2_y = 0
+        if isinstance(obj, Circle):
+            from math import sqrt, pow
+            r = obj.getRadius()
+            center_x = obj.getCenter().getX()
+            center_y = obj.getCenter().getY()
+            d = sqrt(pow((click_x - center_x), 2) + pow((click_y - center_y), 2))
+            if d <= r:
+                return True
+            else:
+                return False
+        elif isinstance(obj, Polygon):
+            points = obj.getPoints()
+            final_points = []
+            for point in points:
+                temp = [point.getX(), point.getY()]
+                final_points.append(temp)
+            polygon = mpl_path.Path(np.array(final_points))
+            return polygon.contains_point((click_x, click_y))
+        elif isinstance(obj, Rectangle):
+            item_p1 = obj.getP1()
+            item_p1_x = item_p1.getX()
+            item_p1_y = item_p1.getY()
+            item_p2 = obj.getP2()
+            item_p2_x = item_p2.getX()
+            item_p2_y = item_p2.getY()
+        if min(item_p1_x, item_p2_x) < click_x < max(item_p1_x, item_p2_x) \
+                and min(item_p1_y, item_p2_y) < click_y < max(item_p1_y, item_p2_y):
+            return True
+        else:
+            return False
+
 
 class _BBox(GraphicsObject):
     # Internal base class for objects represented by bounding box
     # (opposite corners) Line segment is a degenerate case.
     
-    def __init__(self, p1, p2, options=["outline", "width", "fill"]):
+    def __init__(self, p1, p2, options=None):
+        if options is None:
+            options = ["outline", "width", "fill"]
         GraphicsObject.__init__(self, options)
         self.p1 = p1.clone()
         self.p2 = p2.clone()
@@ -646,6 +693,12 @@ class _BBox(GraphicsObject):
         p1 = self.p1
         p2 = self.p2
         return Point((p1.x+p2.x)/2.0, (p1.y+p2.y)/2.0)
+
+    def containsPoint(self, p):
+        if p is None:
+            return
+        return min(self.p1.x, self.p2.x) < p.x < max(self.p1.x, self.p2.x) \
+            and min(self.p1.y, self.p2.y) < p.y < max(self.p1.y, self.p2.y)
 
 
 class Rectangle(_BBox):
@@ -709,6 +762,14 @@ class Circle(Oval):
     def getRadius(self):
         return self.radius
 
+    def containsPoint(self, p):
+        if p is None:
+            return
+        center_x = self.getCenter().getX()
+        center_y = self.getCenter().getY()
+        d = sqrt(pow((p.x - center_x), 2) + pow((p.y - center_y), 2))
+        return d <= self.radius
+
 
 class Line(_BBox):
     
@@ -736,6 +797,13 @@ class Line(_BBox):
         if option not in ["first", "last", "both", "none"]:
             raise GraphicsError(BAD_OPTION)
         self._reconfig("arrow", option)
+
+    def containsPoint(self, p):
+        if p is None:
+            return
+        def distance(a, b):
+            return sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+        return distance(self.p1, p) + distance(p, self.p2) == distance(self.p1, self.p2)
         
 
 class Polygon(GraphicsObject):
@@ -769,7 +837,18 @@ class Polygon(GraphicsObject):
             args.append(x)
             args.append(y)
         args.append(options)
-        return GraphWin.create_polygon(*args) 
+        return GraphWin.create_polygon(*args)
+
+    def containsPoint(self, p):
+        if p is None:
+            return
+        points = self.getPoints()
+        final_points = []
+        for point in points:
+            temp = [point.getX(), point.getY()]
+            final_points.append(temp)
+        polygon = mpl_path.Path(np.array(final_points))
+        return polygon.contains_point((p.x, p.y))
 
 
 class Text(GraphicsObject):
@@ -1008,7 +1087,7 @@ def color_rgb(r, g, b):
     return "#%02x%02x%02x" % (r, g, b)
 
 
-def clickedOn(item, check):  # TODO: my custom click detector
+def _clickedOn(item, check):
     if check is None:
         return None
     click_x = check.getX()
@@ -1042,7 +1121,8 @@ def clickedOn(item, check):  # TODO: my custom click detector
         item_p2 = item.getP2()
         item_p2_x = item_p2.getX()
         item_p2_y = item_p2.getY()
-    if min(item_p1_x, item_p2_x) < click_x < max(item_p1_x, item_p2_x) and min(item_p1_y, item_p2_y) < click_y < max(item_p1_y, item_p2_y):
+    if min(item_p1_x, item_p2_x) < click_x < max(item_p1_x, item_p2_x) \
+            and min(item_p1_y, item_p2_y) < click_y < max(item_p1_y, item_p2_y):
         return True
     else:
         return False
