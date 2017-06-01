@@ -26,13 +26,17 @@ main()
 ```
 ![Example](https://github.com/SethDamiani/PythonGraphics/blob/master/images/ReadmeExample.png)
 
-## Changes From Original
+## TODOs
 
-- Add functionality to easily determine when a GraphicsObject was clicked on
-- Add ability to check where mouse cursor is
-- Add ability to detect right clicks as well as left clicks
-
-## Goals
-
-- Add ability to rotate GraphicsObjects
-- Convert clickedOn function into two methods - `Point.isInside(GraphicsObject)` and `GraphicsObject.containsPoint(Point)`
+- [ ] Add ability to determine if a `Point` is located inside a `GraphicsObject`
+  - [x] `Rectangle`
+  - [x] `Circle`
+  - [x] `Line`
+  - [x] `Polygon`
+  - [ ] `Text`
+  - [ ] `Entry`
+  - [ ] `Image`
+- [x] Add ability to check where mouse cursor is
+- [x] Add ability to detect right clicks as well as left clicks
+- [ ] Add ability to rotate `GraphicsObject`s
+- [ ] Add ability to resize `GraphicsObject`s
