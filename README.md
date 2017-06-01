@@ -10,6 +10,7 @@ To install this library, put `graphics.py` where it can be imported by python. I
 
 ## Getting Started
 
+Extensive documentation is available in the [wiki](https://github.com/SethDamiani/PythonGraphics/wiki).
 Here is a complete program to draw a circle of radius 10 centered in a 100x100 window:
 ```python
 from graphics import *
@@ -23,7 +24,7 @@ def main():
 
 main()
 ```
-Extensive documentation is available in the wiki.
+![Example](https://github.com/SethDamiani/PythonGraphics/blob/master/images/ReadmeExample.png)
 
 ## Changes From Original
 
