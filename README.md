@@ -40,3 +40,4 @@ main()
 - [x] Add ability to detect right clicks as well as left clicks
 - [ ] Add ability to rotate `GraphicsObject`s
 - [ ] Add ability to resize `GraphicsObject`s
+- [ ] Add chainable object creations
