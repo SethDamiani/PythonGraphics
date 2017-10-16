@@ -38,6 +38,7 @@ main()
   - [ ] `Image`
 - [x] Add ability to check where mouse cursor is
 - [x] Add ability to detect right clicks as well as left clicks
+- [x] Add chainable methods
+- [x] Add keyword arguments to `GraphicsObject`s
 - [ ] Add ability to rotate `GraphicsObject`s
 - [ ] Add ability to resize `GraphicsObject`s
-- [ ] Add chainable object creations
